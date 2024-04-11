@@ -53,8 +53,11 @@ namespace ledclock
             _latchPin(latchPin), 
             _clockPin(clockPin) 
     {
+        pinMode(_dataPin, OUTPUT);
+        pinMode(_latchPin, OUTPUT);
+        pinMode(_clockPin, OUTPUT);
+
         //Scheduler.start(&_printTask);
-        pinMode(dataPin, OUTPUT);
     }
 
     void DisplayDriver::clear(void)
@@ -110,6 +113,8 @@ namespace ledclock
         }
     }
 
+    // ----------------------------------------------------------
+
     void DisplayDriver::setAllSegments(int state)
     {
         //_printTask.En
@@ -120,6 +125,8 @@ namespace ledclock
         }
         _pulsePin(_latchPin);
     }
+
+    // ----------------------------------------------------------
 
     void DisplayDriver::shiftSegmentOut(void)
     {
@@ -138,7 +145,6 @@ namespace ledclock
 
     void DisplayDriver::_pulsePin(uint8_t pin)
     {
-        pinMode(pin, OUTPUT);
         digitalWrite(pin, LOW);
         digitalWrite(pin, HIGH);
         digitalWrite(pin, LOW);

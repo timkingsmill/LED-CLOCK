@@ -8,7 +8,8 @@ namespace std
 
   static ArduinoOutStream cout(Serial);
 
-  inline ostream& endl(ostream& os) {
+  inline ostream& endl(ostream& os) 
+  {
     os.put('\n');
   #if ENDL_CALLS_FLUSH
     os.flush();

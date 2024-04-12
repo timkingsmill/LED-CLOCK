@@ -10,6 +10,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <time.h>
 
 
 // Pin connected to Serial In (pin 14) of 74HC595
@@ -41,6 +42,7 @@ ESP8266WebServer server(SERVICE_PORT);
 */
 const char* getTimeString(void) {
 
+
   static char acTimeString[32];
   time_t now = time(nullptr);
   ctime_r(&now, acTimeString);
@@ -62,8 +64,10 @@ const char* getTimeString(void) {
 */
 void setClock(void) 
 {
-    configTime((TIMEZONE_OFFSET * 3600), (DST_OFFSET * 3600), "pool.ntp.org", "time.nist.gov", "time.windows.com");
+    configTzTime("AU", "pool.ntp.org", "time.nist.gov", "time.windows.com");
+    //configTime((TIMEZONE_OFFSET * 3600), (DST_OFFSET * 3600), "pool.ntp.org", "time.nist.gov", "time.windows.com");
 
+    
     Serial.print("\nWaiting for NTP time sync: ");
     time_t now = time(nullptr);   // Secs since 01.01.1970 (when uninitialized starts with (8 * 3600 = 28800)
     while (now < 8 * 3600 * 2) {  // Wait for realistic value
@@ -96,13 +100,14 @@ bool setStationHostname(const char* p_pcHostname) {
    This can be triggered by calling MDNS.announce().
 
 */
-void MDNSDynamicServiceTxtCallback(const MDNSResponder::hMDNSService p_hService) {
-  Serial.println("MDNSDynamicServiceTxtCallback");
-
-  if (hMDNSService == p_hService) {
-    Serial.printf("Updating curtime TXT item to: %s\n", getTimeString());
-    MDNS.addDynamicServiceTxt(p_hService, "curtime", getTimeString());
-  }
+void MDNSDynamicServiceTxtCallback(const MDNSResponder::hMDNSService p_hService) 
+{
+    Serial.println("MDNSDynamicServiceTxtCallback");
+    if (hMDNSService == p_hService) 
+    {
+        Serial.printf("Updating curtime TXT item to: %s\n", getTimeString());
+        MDNS.addDynamicServiceTxt(p_hService, "curtime", getTimeString());
+    }
 }
 
 /*
@@ -154,7 +159,7 @@ void handleHTTPRequest() {
 
   // Get current time
   time_t now = time(nullptr);
-  ;
+  
   struct tm timeinfo;
   gmtime_r(&now, &timeinfo);
 
@@ -171,7 +176,60 @@ void handleHTTPRequest() {
   server.send(200, "text/html", s);
 }
 
+void setTimezone(String timezone)
+{
+    Serial.printf("  Setting Timezone to %s\n",timezone.c_str());
+    setenv("TZ",timezone.c_str(),1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
+    tzset();
+}
+
+void initTime(String timezone)
+{
+    struct tm timeinfo;
+
+    Serial.println("Setting up time");
+    configTime(0, 0, "pool.ntp.org");    // First connect to NTP server, with 0 TZ offset
+    if(!getLocalTime(&timeinfo))
+    {
+      Serial.println("  Failed to obtain time");
+      return;
+    }
+    Serial.println("  Got the time from NTP");
+    // Now we can set the real timezone
+    setTimezone(timezone);
+}
+
+void setTime(int yr, int month, int mday, int hr, int minute, int sec, int isDst)
+{
+    struct tm tm;
+
+    tm.tm_year = yr - 1900;   // Set date
+    tm.tm_mon = month-1;
+    tm.tm_mday = mday;
+    tm.tm_hour = hr;      // Set time
+    tm.tm_min = minute;
+    tm.tm_sec = sec;
+    tm.tm_isdst = isDst;  // 1 or 0
+    time_t t = mktime(&tm);
+    Serial.printf("Setting time: %s", asctime(&tm));
+    struct timeval now = { .tv_sec = t };
+    settimeofday(&now, NULL);
+}
+
+void printLocalTime(){
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time 1");
+    return;
+  }
+  std::cout << timeinfo.tm_hour << endl;
+}
 // ------------------------------------------------------------------------------------------
+// Daylight savings examples:
+// https://raw.githubusercontent.com/RuiSantosdotme/Random-Nerd-Tutorials/master/Projects/ESP32/ESP32_Timezones.ino
+// https://werner.rothschopf.net/202011_arduino_esp8266_ntp_en.htm
+#define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"
+#define MY_NTP_SERVER "at.pool.ntp.org"
 
 void setup()
 {
@@ -187,9 +245,11 @@ void setup()
     printGreeting(std::cout);
     printDeviceInfo(std::cout);
 
+    configTime(MY_TZ, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
     ledclock::connectToWiFi();
 
-
+    initTime("WET0WEST,M3.5.0/1,M10.5.0");   // Set for Melbourne/AU
+    printLocalTime();
     // Sync clock
     setClock();
 
@@ -217,11 +277,39 @@ void setup()
     std::cout << ".............................................................................\n";
 }
 
+void showTime() 
+{
+    time_t now;                         // this are the seconds since Epoch (1970) - UTC
+    tm tm; 
+
+    time(&now);                       // read the current time
+    localtime_r(&now, &tm);           // update the structure tm with the current time
+    Serial.print("year:");
+    Serial.print(tm.tm_year + 1900);  // years since 1900
+    Serial.print("\tmonth:");
+    Serial.print(tm.tm_mon + 1);      // January = 0 (!)
+    Serial.print("\tday:");
+    Serial.print(tm.tm_mday);         // day of month
+    Serial.print("\thour:");
+    Serial.print(tm.tm_hour);         // hours since midnight  0-23
+    Serial.print("\tmin:");
+    Serial.print(tm.tm_min);          // minutes after the hour  0-59
+    Serial.print("\tsec:");
+    Serial.print(tm.tm_sec);          // seconds after the minute  0-61*
+    Serial.print("\twday");
+    Serial.print(tm.tm_wday);         // days since Sunday 0-6
+    if (tm.tm_isdst == 1)             // Daylight Saving Time flag
+        Serial.print("\tDST");
+    else
+        Serial.print("\tstandard");
+    Serial.println();
+}
   // -----------------------------------------------------------------------------------------
 
 void loop()
 {
-    // Check if a request has come in
+  
+  // Check if a request has come in
   server.handleClient();
   // Allow MDNS processing
   MDNS.update();

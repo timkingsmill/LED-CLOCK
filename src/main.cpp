@@ -225,6 +225,8 @@ void printLocalTime(){
   std::cout << timeinfo.tm_hour << endl;
 }
 // ------------------------------------------------------------------------------------------
+// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+
 // Daylight savings examples:
 // https://raw.githubusercontent.com/RuiSantosdotme/Random-Nerd-Tutorials/master/Projects/ESP32/ESP32_Timezones.ino
 // https://werner.rothschopf.net/202011_arduino_esp8266_ntp_en.htm

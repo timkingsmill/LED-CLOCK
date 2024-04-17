@@ -6,6 +6,7 @@
 namespace std
 {
 
+  static ArduinoOutStream cerr(Serial);
   static ArduinoOutStream cout(Serial);
 
   inline ostream& endl(ostream& os) 

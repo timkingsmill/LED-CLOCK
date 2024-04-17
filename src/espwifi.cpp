@@ -26,6 +26,7 @@ namespace ledclock
 
         wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
 
+        WiFi.persistent(false);
         WiFi.mode(WIFI_STA);
         WiFi.begin(ssid, password);
 

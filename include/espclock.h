@@ -10,17 +10,16 @@
 
 class EspClock
 {
-  public:
-    explicit EspClock();
+    public:
+        explicit EspClock();
 
-    tm getCurrentTime();
-    bool isRunning();
-    bool startClock(float_t timezone_offset_hours, float_t daylight_offset_hours); 
-    bool updateLocalTime(tm& localTime);
-
-  private:
-    bool _isRunning = false;
-    time_t _previous_time_sec = 0;
+        tm getCurrentTime();
+        inline bool isRunning() { return _isRunning; };
+        void startClock(const char* tz, const char* server1, const char* server2 = nullptr, const char* server3 = nullptr);
+        bool updateLocalTime(tm& localTime);
+    private:
+        bool _isRunning = false;
+        time_t _previous_time_sec = 0;
 };
 
 #endif // __esp_clock_h__

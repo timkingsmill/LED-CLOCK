@@ -1,3 +1,11 @@
+/*****************************************************************************
+ 
+    Daylight savings examples:
+        https://werner.rothschopf.net/202011_arduino_esp8266_ntp_en.htm
+
+******************************************************************************/
+
+
 #include <Arduino.h>
 
 #include "displaydriver.h"
@@ -12,6 +20,19 @@
 #include <ESP8266WebServer.h>
 #include <time.h>
 
+/* Configuration of NTP */
+#define NTP_SERVER1 "pool.ntp.org"  
+#define NTP_SERVER2 "time.nist.gov"  
+#define NTP_SERVER3 "time.windows.com"  
+/*
+    South Australia Daylight Saving: 
+    Sun, 1 Oct 2023 – Sun, 7 Apr 2024
+    Sun, 6 Oct 2024 – Sun, 6 Apr 2025
+    Clock moves forward 1 hour during daylight saving.
+    See:  https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+          https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+*/
+#define SOUTH_AUSTRALIA_TZ "ACST-9:30ACDT,M10.1.0/02,M4.1.0/03"   
 
 // Pin connected to Serial In (pin 14) of 74HC595
 // Brown Jumper
@@ -26,7 +47,7 @@ const int latchPin = D0;
 
 
 ledclock::DisplayDriver displayDriver(dataPin, latchPin, clockPin);
-//EspClock espClock;
+EspClock espClock;
 
 char* pcHostDomain = 0;                        // Negotiated host domain
 bool bHostDomainConfirmed = false;             // Flags the confirmation of the host domain
@@ -53,18 +74,20 @@ const char* getTimeString(void) {
   return acTimeString;
 }
 
-#define TIMEZONE_OFFSET 1        // CET
-#define DST_OFFSET 1             // CEST
+//#define TIMEZONE_OFFSET 1        // CET
+//#define DST_OFFSET 1             // CEST
 #define UPDATE_CYCLE (1 * 1000)  // every second
+
 
 /*
    setClock
 
    Set time via NTP
 */
+/*
 void setClock(void) 
 {
-    configTzTime("AU", "pool.ntp.org", "time.nist.gov", "time.windows.com");
+    //configTzTime("AU", "pool.ntp.org", "time.nist.gov", "time.windows.com");
     //configTime((TIMEZONE_OFFSET * 3600), (DST_OFFSET * 3600), "pool.ntp.org", "time.nist.gov", "time.windows.com");
 
     
@@ -78,7 +101,7 @@ void setClock(void)
     Serial.println("");
     Serial.printf("Current time: %s\n", getTimeString());
 }
-
+*/
 /*
    setStationHostname
 */
@@ -176,63 +199,6 @@ void handleHTTPRequest() {
   server.send(200, "text/html", s);
 }
 
-void setTimezone(String timezone)
-{
-    Serial.printf("  Setting Timezone to %s\n",timezone.c_str());
-    setenv("TZ",timezone.c_str(),1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
-    tzset();
-}
-
-void initTime(String timezone)
-{
-    struct tm timeinfo;
-
-    Serial.println("Setting up time");
-    configTime(0, 0, "pool.ntp.org");    // First connect to NTP server, with 0 TZ offset
-    if(!getLocalTime(&timeinfo))
-    {
-      Serial.println("  Failed to obtain time");
-      return;
-    }
-    Serial.println("  Got the time from NTP");
-    // Now we can set the real timezone
-    setTimezone(timezone);
-}
-
-void setTime(int yr, int month, int mday, int hr, int minute, int sec, int isDst)
-{
-    struct tm tm;
-
-    tm.tm_year = yr - 1900;   // Set date
-    tm.tm_mon = month-1;
-    tm.tm_mday = mday;
-    tm.tm_hour = hr;      // Set time
-    tm.tm_min = minute;
-    tm.tm_sec = sec;
-    tm.tm_isdst = isDst;  // 1 or 0
-    time_t t = mktime(&tm);
-    Serial.printf("Setting time: %s", asctime(&tm));
-    struct timeval now = { .tv_sec = t };
-    settimeofday(&now, NULL);
-}
-
-void printLocalTime(){
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time 1");
-    return;
-  }
-  std::cout << timeinfo.tm_hour << endl;
-}
-// ------------------------------------------------------------------------------------------
-// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-
-// Daylight savings examples:
-// https://raw.githubusercontent.com/RuiSantosdotme/Random-Nerd-Tutorials/master/Projects/ESP32/ESP32_Timezones.ino
-// https://werner.rothschopf.net/202011_arduino_esp8266_ntp_en.htm
-#define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"
-#define MY_NTP_SERVER "at.pool.ntp.org"
-
 void setup()
 {
     Serial.begin(115200);
@@ -247,15 +213,12 @@ void setup()
     printGreeting(std::cout);
     printDeviceInfo(std::cout);
 
-    configTime(MY_TZ, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
+    // Here is the IMPORTANT ONE LINER needed in your sketch!
+    //configTime(SOUTH_AUSTRALIA_TZ, NTP_SERVER1, NTP_SERVER2, NTP_SERVER3); 
+    
     ledclock::connectToWiFi();
 
-    initTime("WET0WEST,M3.5.0/1,M10.5.0");   // Set for Melbourne/AU
-    printLocalTime();
-    // Sync clock
-    setClock();
-
-    
+    /*   
     MDNS.setHostProbeResultCallback(hostProbeResult);
     
     // Init the (currently empty) host domain string with 'esp8266'
@@ -277,6 +240,7 @@ void setup()
     std::cout << std::endl;
     std::cout << "Setup Complete" << std::endl;
     std::cout << ".............................................................................\n";
+    ***/
 }
 
 void showTime() 
@@ -286,31 +250,47 @@ void showTime()
 
     time(&now);                       // read the current time
     localtime_r(&now, &tm);           // update the structure tm with the current time
-    Serial.print("year:");
+    Serial.print("year: ");
     Serial.print(tm.tm_year + 1900);  // years since 1900
-    Serial.print("\tmonth:");
+    Serial.print("   month: ");
     Serial.print(tm.tm_mon + 1);      // January = 0 (!)
-    Serial.print("\tday:");
+    Serial.print("   day: ");
     Serial.print(tm.tm_mday);         // day of month
-    Serial.print("\thour:");
+    Serial.print("   hour: ");
     Serial.print(tm.tm_hour);         // hours since midnight  0-23
-    Serial.print("\tmin:");
+    Serial.print("   min: ");
     Serial.print(tm.tm_min);          // minutes after the hour  0-59
-    Serial.print("\tsec:");
+    Serial.print("   sec: ");
     Serial.print(tm.tm_sec);          // seconds after the minute  0-61*
-    Serial.print("\twday");
+    Serial.print("   wday: ");
     Serial.print(tm.tm_wday);         // days since Sunday 0-6
     if (tm.tm_isdst == 1)             // Daylight Saving Time flag
-        Serial.print("\tDST");
+        Serial.print("   DST");
     else
-        Serial.print("\tstandard");
+        Serial.print("   standard");
     Serial.println();
 }
   // -----------------------------------------------------------------------------------------
 
 void loop()
 {
-  
+    if (!espClock.isRunning())
+    {
+        espClock.startClock(SOUTH_AUSTRALIA_TZ, NTP_SERVER1);
+    } 
+    else
+    {
+        tm localTime;
+        if (espClock.updateLocalTime(localTime))
+        {
+            displayDriver.displayTime(localTime);
+            showTime();
+        }
+    }
+
+    
+
+  /****
   // Check if a request has come in
   server.handleClient();
   // Allow MDNS processing
@@ -326,7 +306,7 @@ void loop()
     }
   }
 
-
+*/
 }
 
 /*

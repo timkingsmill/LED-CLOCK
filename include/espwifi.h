@@ -8,6 +8,7 @@
 namespace ledclock
 {
     void connectToWiFi(void);
+    
 }
 
 #endif

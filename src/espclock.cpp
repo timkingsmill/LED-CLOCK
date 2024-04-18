@@ -6,13 +6,6 @@ EspClock::EspClock()
 {
 }
 
-tm EspClock::getCurrentTime()
-{
-    tm localTime;
-    ::getLocalTime(&localTime, 0);
-    return localTime;
-}
-
 void EspClock::startClock(const char* tz, const char* server1, const char* server2, const char* server3)
 {
     if (!_isRunning)

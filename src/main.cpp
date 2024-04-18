@@ -45,7 +45,6 @@ const int clockPin = D1;
 // Yellow Jumper
 const int latchPin = D0;
 
-
 ledclock::DisplayDriver displayDriver(dataPin, latchPin, clockPin);
 EspClock espClock;
 
@@ -62,8 +61,6 @@ ESP8266WebServer server(SERVICE_PORT);
    getTimeString
 */
 const char* getTimeString(void) {
-
-
   static char acTimeString[32];
   time_t now = time(nullptr);
   ctime_r(&now, acTimeString);
@@ -74,37 +71,8 @@ const char* getTimeString(void) {
   return acTimeString;
 }
 
-//#define TIMEZONE_OFFSET 1        // CET
-//#define DST_OFFSET 1             // CEST
 #define UPDATE_CYCLE (1 * 1000)  // every second
 
-
-/*
-   setClock
-
-   Set time via NTP
-*/
-/*
-void setClock(void) 
-{
-    //configTzTime("AU", "pool.ntp.org", "time.nist.gov", "time.windows.com");
-    //configTime((TIMEZONE_OFFSET * 3600), (DST_OFFSET * 3600), "pool.ntp.org", "time.nist.gov", "time.windows.com");
-
-    
-    Serial.print("\nWaiting for NTP time sync: ");
-    time_t now = time(nullptr);   // Secs since 01.01.1970 (when uninitialized starts with (8 * 3600 = 28800)
-    while (now < 8 * 3600 * 2) {  // Wait for realistic value
-      delay(100);
-      Serial.print(".");
-      now = time(nullptr);
-    }
-    Serial.println("");
-    Serial.printf("Current time: %s\n", getTimeString());
-}
-*/
-/*
-   setStationHostname
-*/
 bool setStationHostname(const char* p_pcHostname) {
 
   if (p_pcHostname) {
@@ -213,9 +181,6 @@ void setup()
     printGreeting(std::cout);
     printDeviceInfo(std::cout);
 
-    // Here is the IMPORTANT ONE LINER needed in your sketch!
-    //configTime(SOUTH_AUSTRALIA_TZ, NTP_SERVER1, NTP_SERVER2, NTP_SERVER3); 
-    
     ledclock::connectToWiFi();
 
     /*   
@@ -243,6 +208,7 @@ void setup()
     ***/
 }
 
+/*
 void showTime() 
 {
     time_t now;                         // this are the seconds since Epoch (1970) - UTC
@@ -270,7 +236,9 @@ void showTime()
         Serial.print("   standard");
     Serial.println();
 }
-  // -----------------------------------------------------------------------------------------
+*/
+
+// -----------------------------------------------------------------------------------------
 
 void loop()
 {
@@ -284,7 +252,6 @@ void loop()
         if (espClock.updateLocalTime(localTime))
         {
             displayDriver.displayTime(localTime);
-            showTime();
         }
     }
 
@@ -309,26 +276,8 @@ void loop()
 */
 }
 
-/*
-void loop() 
-{
+// -----------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------
 
-  displayDriver.setAllSegments(HIGH);
-
-
-  digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
-  delay(1000);                      // wait for a second
-  digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
-  delay(1000);                      // wait for a second
-
-  displayDriver.setAllSegments(LOW);
-
-  delay(5000);
-  printf("Restarting now.\n");
-  fflush(stdout);
-  ESP.restart();
-
-}
-*/
 
 

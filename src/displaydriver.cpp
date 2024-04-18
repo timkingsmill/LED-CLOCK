@@ -60,6 +60,8 @@ namespace ledclock
         //Scheduler.start(&_printTask);
     }
 
+    // ----------------------------------------------------------
+
     void DisplayDriver::clear(void)
     {
         int data = LOW;
@@ -70,6 +72,8 @@ namespace ledclock
             _pulsePin(_latchPin);
         }
     }
+
+    // ----------------------------------------------------------
 
     void DisplayDriver::displayTime(const tm& time)
     {
@@ -89,12 +93,28 @@ namespace ledclock
         buffer[2] = buffer[2] | static_cast<T>(Segment::DP);
         buffer[3] = buffer[3] | static_cast<T>(Segment::DP);
 
-        int hours = (time.tm_hour % 12) + 1;
+        int hours = (time.tm_hour % 12);
+        if (hours == 0)
+            hours = 12;
+
         buffer[4] = characters[hours % 10];
         if (hours > 9)
         {
             buffer[5] = characters[1]; 
         }
+
+        // Set the AM / PM led.
+        int hours24 = time.tm_hour;
+        if ((hours24 == 24) || (hours24 < 12))
+        {
+            // AM
+            buffer[5] = buffer[5] | static_cast<T>(Segment::DP);
+        }
+        else 
+        {
+            // PM
+            buffer[4] = buffer[4] | static_cast<T>(Segment::DP);
+        }  
 
         for (int digit = 6; digit >= 0; digit--)
         {
@@ -102,6 +122,8 @@ namespace ledclock
         }
         _pulsePin(_latchPin);
     }
+
+    // ----------------------------------------------------------
 
     void DisplayDriver::_shiftBitmapOut(byte bitmap)
     {

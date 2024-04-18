@@ -13,7 +13,6 @@ class EspClock
     public:
         explicit EspClock();
 
-        tm getCurrentTime();
         inline bool isRunning() { return _isRunning; };
         void startClock(const char* tz, const char* server1, const char* server2 = nullptr, const char* server3 = nullptr);
         bool updateLocalTime(tm& localTime);

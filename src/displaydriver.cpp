@@ -35,7 +35,6 @@ namespace ledclock
         static_cast<byte>(Segment::A | Segment::C | Segment::D | Segment::F | Segment::G),     
         static_cast<byte>(Segment::A | Segment::C | Segment::D | Segment::E | Segment::F | Segment::G),     
         static_cast<byte>(Segment::A | Segment::B | Segment::C),    
-        static_cast<byte>(Segment::A | Segment::B | Segment::C),    
         static_cast<byte>(Segment::A | Segment::B | Segment::C | Segment::D | Segment::E | Segment::F | Segment::G),
         static_cast<byte>(Segment::A | Segment::B | Segment::C | Segment::D | Segment::F | Segment::G),
         static_cast<byte>(Segment::A | Segment::B | Segment::C | Segment::E | Segment::F | Segment::G),
@@ -77,7 +76,6 @@ namespace ledclock
 
     void DisplayDriver::displayTime(const tm& time)
     {
-        std::cout << "Clock Has Updated" << std::endl;
         using T = std::underlying_type_t<Segment>;
         
         byte buffer[6] {0, 0, 0, 0 ,0, 0};
@@ -96,6 +94,8 @@ namespace ledclock
         int hours = (time.tm_hour % 12);
         if (hours == 0)
             hours = 12;
+
+        //std::cout << "hours ----" << hours % 10 << std::endl;
 
         buffer[4] = characters[hours % 10];
         if (hours > 9)

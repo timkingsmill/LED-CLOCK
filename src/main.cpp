@@ -5,9 +5,7 @@
 
 ******************************************************************************/
 
-
-#include <Arduino.h>
-
+#include "ClockWebServer.h"
 #include "displaydriver.h"
 #include "greeting.h"
 #include "espclock.h"
@@ -16,10 +14,10 @@
 #include "espstdlib/espio.h"
 #include "espstdlib/espinfo.h"
 
-#include <ESP8266mDNS.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <time.h>
+//#include <ESP8266mDNS.h>
+//#include <WiFiClient.h>
+// #include <ESP8266WebServer.h>
+//#include <time.h>
 
 /* Configuration of NTP */
 #define NTP_SERVER1 "pool.ntp.org"  
@@ -49,6 +47,7 @@ const int latchPin = D0;
 ledclock::DisplayDriver displayDriver(dataPin, latchPin, clockPin);
 EspClock espClock;
 
+/*
 char* pcHostDomain = 0;                        // Negotiated host domain
 bool bHostDomainConfirmed = false;             // Flags the confirmation of the host domain
 MDNSResponder::hMDNSService hMDNSService = 0;  // The handle of the clock service in the MDNS responder
@@ -57,10 +56,12 @@ MDNSResponder::hMDNSService hMDNSService = 0;  // The handle of the clock servic
 
 // HTTP server at port 'SERVICE_PORT' will respond to HTTP requests
 ESP8266WebServer server(SERVICE_PORT);
+*/
 
 /*
    getTimeString
 */
+/*
 const char* getTimeString(void) {
   static char acTimeString[32];
   time_t now = time(nullptr);
@@ -82,7 +83,7 @@ bool setStationHostname(const char* p_pcHostname) {
   }
   return true;
 }
-
+*/
 /*
    MDNSDynamicServiceTxtCallback
 
@@ -92,6 +93,7 @@ bool setStationHostname(const char* p_pcHostname) {
    This can be triggered by calling MDNS.announce().
 
 */
+/*
 void MDNSDynamicServiceTxtCallback(const MDNSResponder::hMDNSService p_hService) 
 {
     Serial.println("MDNSDynamicServiceTxtCallback");
@@ -101,7 +103,7 @@ void MDNSDynamicServiceTxtCallback(const MDNSResponder::hMDNSService p_hService)
         MDNS.addDynamicServiceTxt(p_hService, "curtime", getTimeString());
     }
 }
-
+*/
 /*
    MDNSProbeResultCallback
 
@@ -112,6 +114,7 @@ void MDNSDynamicServiceTxtCallback(const MDNSResponder::hMDNSService p_hService)
    restarted via p_pMDNSResponder->setHostname().
 
 */
+/*
 void hostProbeResult(String p_pcDomainName, bool p_bProbeResult) {
 
   Serial.println("MDNSProbeResultCallback");
@@ -168,6 +171,8 @@ void handleHTTPRequest() {
   server.send(200, "text/html", s);
 }
 
+*/
+
 void setup()
 {
     Serial.begin(115200);
@@ -183,6 +188,7 @@ void setup()
     printDeviceInfo(std::cout);
 
     ledclock::connectToWiFi();
+    initWebServer();
 
     /*   
     MDNS.setHostProbeResultCallback(hostProbeResult);
@@ -229,11 +235,11 @@ void loop()
         tm localTime;
         if (espClock.updateLocalTime(localTime))
         {
-            std::cout << localTime << std::endl;
+            //std::cout << localTime << std::endl;
             displayDriver.displayTime(localTime);
         }
     }
-
+  handleWebServerClients();
     
 
   /****
